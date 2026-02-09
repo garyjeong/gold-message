@@ -5,6 +5,7 @@ primary_region = 'nrt'
 
 [env]
   TZ = 'Asia/Seoul'
+  PYTHONUNBUFFERED = '1'
 
 [[vm]]
   size = 'shared-cpu-1x'
