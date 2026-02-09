@@ -1,0 +1,11 @@
+app = 'gold-message'
+primary_region = 'nrt'
+
+[build]
+
+[env]
+  TZ = 'Asia/Seoul'
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '256mb'
