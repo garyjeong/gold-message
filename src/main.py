@@ -37,9 +37,10 @@ if __name__ == "__main__":
     # 로컬 실행 시 .env 파일 로드 (fly.io에서는 secrets로 주입)
     load_dotenv(os.path.join(os.path.dirname(__file__), '..', 'config', '.env'))
 
-    # 매일 오전 8시 (KST) 실행 스케줄 등록
-    schedule.every().day.at("08:00").do(send_gold_price)
-    print("⏰ 스케줄러 시작 - 매일 08:00 KST 금 시세 알림")
+    # 매일 4회 발송 (08:00, 11:00, 14:00, 17:00 KST)
+    for t in ["08:00", "11:00", "14:00", "17:00"]:
+        schedule.every().day.at(t).do(send_gold_price)
+    print("⏰ 스케줄러 시작 - 매일 08/11/14/17시 금·은 시세 알림")
 
     while True:
         schedule.run_pending()
