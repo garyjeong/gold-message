@@ -22,7 +22,7 @@ def send_gold_price():
     price_data = scraper.get_price()
 
     if price_data:
-        price_data['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        price_data['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M')
 
         message = MessageFormatter.format_gold_price(price_data)
         print(f"\n📝 발송할 메시지:\n{message}\n")
