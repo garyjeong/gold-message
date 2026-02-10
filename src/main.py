@@ -12,14 +12,13 @@ def send_gold_price():
     """금 시세 조회 및 텔레그램 발송"""
     bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
     chat_id = os.getenv('TELEGRAM_CHAT_ID')
-    service_key = os.getenv('DATA_GO_KR_SERVICE_KEY')
 
-    if not all([bot_token, chat_id, service_key]):
+    if not all([bot_token, chat_id]):
         print("❌ 환경 변수가 설정되지 않았습니다.")
         return
 
     print("🔍 금 시세 조회 중...")
-    scraper = GoldPriceScraper(service_key)
+    scraper = GoldPriceScraper()
     price_data = scraper.get_price()
 
     if price_data:

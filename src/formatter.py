@@ -3,39 +3,43 @@ from typing import Dict
 
 class MessageFormatter:
     @staticmethod
-    def format_gold_price(data: Dict) -> str:
-        """금 1돈 기준 시세 데이터를 텔레그램 메시지 형식으로 변환"""
+    def _arrow(value: float) -> str:
+        if value > 0:
+            return "🔺"
+        elif value < 0:
+            return "🔻"
+        return "➖"
+
+    @staticmethod
+    def _signed(value: float, fmt: str) -> str:
+        sign = "+" if value > 0 else ""
+        return f"{sign}{value:{fmt}}"
+
+    @classmethod
+    def format_gold_price(cls, data: Dict) -> str:
+        """금·은 1돈 기준 금은방 매매가격을 텔레그램 메시지 형식으로 변환"""
         if not data:
-            return "⚠️ 금 시세 정보를 가져올 수 없습니다."
+            return "⚠️ 시세 정보를 가져올 수 없습니다."
 
-        # 기준일자 포맷
-        dt = data["bas_dt"]
-        bas_dt_fmt = f"{dt[:4]}-{dt[4:6]}-{dt[6:]}"
-
-        # 전일대비 부호
-        vs = data["vs"]
-        vs_sign = "+" if vs > 0 else ""
-        flt_rt = data["flt_rt"]
-        rt_sign = "+" if flt_rt > 0 else ""
-
-        # 등락 아이콘
-        if vs > 0:
-            arrow = "🔺"
-        elif vs < 0:
-            arrow = "🔻"
-        else:
-            arrow = "➖"
+        gd = cls._signed(data["gold_diff"], ",.0f")
+        gp = cls._signed(data["gold_pct"], ".2f")
+        sd = cls._signed(data["silver_diff"], ",.0f")
+        sp = cls._signed(data["silver_pct"], ".2f")
 
         message = (
-            f"🏆 금 시세 (1돈 기준)\n"
-            f"📅 {bas_dt_fmt}\n"
+            f"🏆 금·은 시세 (1돈 기준)\n"
             f"\n"
-            f"💵 현재시세(USD): ${data['price_usd']:,.2f}\n"
-            f"💰 현재시세(KRW): {data['price_krw']:,.0f}원\n"
-            f"{arrow} 전일대비: {vs_sign}{vs:,.0f}원\n"
-            f"📊 등락률: {rt_sign}{flt_rt}%\n"
+            f"🏪 금은방 살 때(금): {data['gold_buy']:,.0f}원\n"
+            f"💰 금은방 팔 때(금): {data['gold_sell']:,.0f}원\n"
+            f"{cls._arrow(data['gold_diff'])} 전일대비(금): {gd}원 ({gp}%)\n"
             f"\n"
-            f"💱 적용환율: {data['exchange_rate']:,.2f} KRW/USD\n"
+            f"🏪 금은방 살 때(은): {data['silver_buy']:,.0f}원\n"
+            f"💰 금은방 팔 때(은): {data['silver_sell']:,.0f}원\n"
+            f"{cls._arrow(data['silver_diff'])} 전일대비(은): {sd}원 ({sp}%)\n"
+            f"\n"
+            f"💱 환율: {data['exchange_rate']:,.2f} KRW/USD"
+            f" ({cls._signed(data['fx_diff'], '.2f')}원,"
+            f" {cls._signed(data['fx_pct'], '.2f')}%)\n"
             f"⏰ 조회: {data.get('timestamp', 'N/A')}"
         )
 
