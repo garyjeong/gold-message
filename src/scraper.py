@@ -51,12 +51,12 @@ class GoldPriceScraper:
         except Exception:
             return 1400.0, 1400.0
 
-    def _usd_oz_to_krw_don(self, usd_per_oz: float, exchange_rate: float) -> float:
-        """USD/트로이온스 → KRW/돈 환산"""
-        return (usd_per_oz / TROY_OZ_TO_GRAM) * exchange_rate * GRAM_PER_DON
+    def _usd_oz_to_krw(self, usd_per_oz: float, exchange_rate: float) -> float:
+        """USD/트로이온스 → KRW/g 환산"""
+        return (usd_per_oz / TROY_OZ_TO_GRAM) * exchange_rate
 
     def get_price(self) -> Optional[Dict]:
-        """금·은 1돈 기준 금은방 매매가격 반환"""
+        """금(1돈)·은(1g) 기준 금은방 매매가격 반환"""
         try:
             response = requests.get(
                 self.api_url, headers=self.headers, timeout=10
@@ -69,13 +69,13 @@ class GoldPriceScraper:
 
         exchange_rate, prev_exchange_rate = self.get_exchange_rates()
 
-        # 금 (XAU)
-        gold_base = self._usd_oz_to_krw_don(item["xauPrice"], exchange_rate)
-        gold_prev = self._usd_oz_to_krw_don(item["xauClose"], exchange_rate)
+        # 금 (XAU) - 1돈(3.75g) 기준
+        gold_base = self._usd_oz_to_krw(item["xauPrice"], exchange_rate) * GRAM_PER_DON
+        gold_prev = self._usd_oz_to_krw(item["xauClose"], exchange_rate) * GRAM_PER_DON
 
-        # 은 (XAG)
-        silver_base = self._usd_oz_to_krw_don(item["xagPrice"], exchange_rate)
-        silver_prev = self._usd_oz_to_krw_don(item["xagClose"], exchange_rate)
+        # 은 (XAG) - 1g 기준
+        silver_base = self._usd_oz_to_krw(item["xagPrice"], exchange_rate)
+        silver_prev = self._usd_oz_to_krw(item["xagClose"], exchange_rate)
 
         # 환율 전일대비
         fx_diff = exchange_rate - prev_exchange_rate
