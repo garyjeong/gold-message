@@ -42,7 +42,10 @@ class MessageFormatter:
             f"💱 환율: {data['exchange_rate']:,.2f} KRW/USD"
             f" ({cls._signed(data['fx_diff'], '.2f')}원,"
             f" {cls._signed(data['fx_pct'], '.2f')}%)\n"
-            f"⏰ 조회: {data.get('timestamp', 'N/A')}"
+            f"⏰ 조회: {data.get('timestamp', 'N/A')}\n"
+            f"\n"
+            f'📈 <a href="https://kr.investing.com/commodities/gold">금 차트</a>'
+            f' | <a href="https://kr.investing.com/commodities/silver">은 차트</a>'
         )
 
         return message
