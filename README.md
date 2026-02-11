@@ -4,8 +4,8 @@
 
 ## 기능
 
-- 국제 금·은 실시간 시세 조회 (goldprice.org)
-- USD/KRW 환율 조회 + 전일대비 변동 표시 (frankfurter.app)
+- 국제 금·은 실시간 시세 조회 (gold-api.com → goldprice.org 폴백)
+- USD/KRW 환율 조회 + 전일대비 변동 표시 (open.er-api.com → fawazahmed0 폴백)
 - 금은방 매매가격 계산 (살 때 / 팔 때)
 - 금: 1돈(3.75g) 기준, 은: 1g 기준 원화 환산
 - 금·은 차트 링크 제공 (kr.investing.com)
@@ -92,8 +92,10 @@ gold-message/
 ## 주요 모듈
 
 ### scraper.py
-- goldprice.org에서 금(XAU)·은(XAG) 실시간 국제시세 조회
-- frankfurter.app에서 USD/KRW 환율 + 전일 환율 조회
+- 금·은 실시간 현재가: gold-api.com (실시간) → goldprice.org (폴백)
+- 전일 종가/변동률: goldprice.org
+- 현재 환율: open.er-api.com (시장 기반) → fawazahmed0/currency-api (폴백)
+- 전일 환율: fawazahmed0/currency-api (과거 날짜 조회)
 - 금: 트로이온스 → 1돈(3.75g) 원화 환산
 - 은: 트로이온스 → 1g 원화 환산
 - 금은방 마진율 적용 (살 때 +15%, 팔 때 -4.5%)
