@@ -1,6 +1,11 @@
+import logging
+import time
+
 import requests
 from datetime import date, timedelta
 from typing import Optional, Dict, Tuple
+
+logger = logging.getLogger(__name__)
 
 # 단위 환산 상수
 GRAM_PER_DON = 3.75
@@ -9,6 +14,26 @@ TROY_OZ_TO_GRAM = 31.1034768
 # 금은방 마진율 (기준시세 대비)
 BUY_MARGIN = 0.15    # 살 때: +15% (부가세 10% + 공임 약 5%)
 SELL_MARGIN = 0.045  # 팔 때: -4.5% (감정수수료)
+
+# 재시도 설정
+MAX_RETRIES = 3
+RETRY_DELAY = 2  # 초
+
+
+def _request_with_retry(url: str, headers: dict, timeout: int = 10) -> requests.Response:
+    """HTTP GET 요청 + 재시도"""
+    last_exc = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            r = requests.get(url, headers=headers, timeout=timeout)
+            r.raise_for_status()
+            return r
+        except requests.RequestException as e:
+            last_exc = e
+            if attempt < MAX_RETRIES:
+                logger.warning("%s 요청 실패 (시도 %d/%d): %s", url, attempt, MAX_RETRIES, e)
+                time.sleep(RETRY_DELAY)
+    raise last_exc
 
 
 class GoldPriceScraper:
@@ -29,30 +54,29 @@ class GoldPriceScraper:
     def _get_realtime_prices(self) -> Optional[Dict]:
         """gold-api.com 실시간 금/은 현재가 (USD/oz)"""
         try:
-            gold = requests.get(
+            gold = _request_with_retry(
                 "https://api.gold-api.com/price/XAU",
-                headers=self.headers, timeout=10,
+                headers=self.headers,
             ).json()
-            silver = requests.get(
+            silver = _request_with_retry(
                 "https://api.gold-api.com/price/XAG",
-                headers=self.headers, timeout=10,
+                headers=self.headers,
             ).json()
             return {
                 "xauPrice": gold["price"],
                 "xagPrice": silver["price"],
             }
         except Exception as e:
-            print(f"gold-api.com 조회 실패: {e}")
+            logger.warning("gold-api.com 조회 실패: %s", e)
             return None
 
     def _get_close_data(self) -> Optional[Dict]:
         """goldprice.org 전일 종가 + 변동률"""
         try:
-            r = requests.get(
+            r = _request_with_retry(
                 "https://data-asg.goldprice.org/dbXRates/USD",
-                headers=self.headers, timeout=10,
+                headers=self.headers,
             )
-            r.raise_for_status()
             item = r.json()["items"][0]
             return {
                 "xauPrice": item["xauPrice"],
@@ -63,7 +87,7 @@ class GoldPriceScraper:
                 "pcXag": item["pcXag"],
             }
         except Exception as e:
-            print(f"goldprice.org 조회 실패: {e}")
+            logger.warning("goldprice.org 조회 실패: %s", e)
             return None
 
     # ── 환율 ────────────────────────────────────────────
@@ -71,9 +95,9 @@ class GoldPriceScraper:
     def _get_rate_open_er(self) -> Optional[float]:
         """open.er-api.com 현재 환율"""
         try:
-            r = requests.get(
+            r = _request_with_retry(
                 "https://open.er-api.com/v6/latest/USD",
-                headers=self.headers, timeout=10,
+                headers=self.headers,
             )
             return r.json()["rates"]["KRW"]
         except Exception:
@@ -92,7 +116,7 @@ class GoldPriceScraper:
                     "https://cdn.jsdelivr.net/npm/"
                     "@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
                 )
-            r = requests.get(url, headers=self.headers, timeout=10)
+            r = _request_with_retry(url, headers=self.headers)
             return r.json()["usd"]["krw"]
         except Exception:
             return None
@@ -104,7 +128,7 @@ class GoldPriceScraper:
         if current_rate is None:
             current_rate = self._get_rate_fawazahmed()
         if current_rate is None:
-            print("환율 조회 실패: 기본값 사용")
+            logger.warning("환율 조회 실패: 기본값 1400 사용")
             return 1400.0, 1400.0
 
         # 전일 환율: fawazahmed0 과거 날짜 조회
@@ -138,7 +162,7 @@ class GoldPriceScraper:
             xau_now = close_data["xauPrice"]
             xag_now = close_data["xagPrice"]
         else:
-            print("금/은 시세 조회 실패: 모든 소스 불가")
+            logger.error("금/은 시세 조회 실패: 모든 소스 불가")
             return None
 
         # 전일종가: goldprice.org → 없으면 현재가로 대체 (변동 0)
